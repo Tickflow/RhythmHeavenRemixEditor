@@ -154,6 +154,7 @@ object BeadsSoundSystem : SoundSystem() {
             val sampleData = Array(music.channels) { FloatArray(interleaved.size / music.channels) }
 
             var currentFrame = 0
+            var hasFoundZero = -1 // frame
             while (true) {
                 val len = bufStream.read(audioBytes)
                 if (len <= 0)
@@ -166,9 +167,23 @@ object BeadsSoundSystem : SoundSystem() {
 
                 sample.putFrames(currentFrame, sampleData, 0, framesOfDataRead)
 
+                if (hasFoundZero < 0) {
+                    outer@ for (chan in 0 until music.channels) {
+                        for (i in 0 until framesOfDataRead) {
+                            if (sampleData[chan][i] != 0f) {
+                                hasFoundZero = currentFrame + i
+                                break@outer
+                            }
+                        }
+                    }
+                }
+
                 currentFrame += framesOfDataRead
             }
             StreamUtils.closeQuietly(bufStream)
+            if (hasFoundZero >= 0) {
+                beadsAudio.startOfNonZero = hasFoundZero / (music.rate.toFloat())
+            }
 
             try {
                 tempFile.delete()

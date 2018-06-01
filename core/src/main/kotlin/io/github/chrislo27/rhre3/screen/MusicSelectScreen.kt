@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.Align
 import io.github.chrislo27.rhre3.PreferenceKeys
 import io.github.chrislo27.rhre3.RHRE3Application
 import io.github.chrislo27.rhre3.editor.Editor
+import io.github.chrislo27.rhre3.soundsystem.beads.BeadsMusic
 import io.github.chrislo27.rhre3.stage.GenericStage
 import io.github.chrislo27.rhre3.stage.LoadingIcon
 import io.github.chrislo27.rhre3.track.MusicData
@@ -96,7 +97,7 @@ class MusicSelectScreen(main: RHRE3Application)
                 super.frameUpdate(screen)
             }
         }.apply {
-            //            this.location.set(screenHeight = 0.75f, screenY = 0.25f)
+            this.location.set(screenHeight = 0.75f, screenY = 0.25f)
             this.textAlign = Align.center
             this.isLocalizationKey = false
             this.text = ""
@@ -165,14 +166,17 @@ class MusicSelectScreen(main: RHRE3Application)
             } else {
                 label.text = Localization["screen.music.currentMusic",
                         if (music == null) Localization["screen.music.noMusic"] else music.handle.name()]
+
+                if (music != null && music.music is BeadsMusic) {
+                    val audio = music.music.audio
+                    label.text += "\n\n"
+                    label.text += if (audio.startOfNonZero <= 0) {
+                        Localization["screen.music.analysis.musicStart.failed"]
+                    } else {
+                        Localization["screen.music.analysis.musicStart", "${audio.startOfNonZero} s"]
+                    }
+                }
             }
-//            if (music != null) {
-//                if (music.handle.extension().equals("wav", true)) {
-//                    label.text += "\n\n${Localization["screen.music.warning.wav"]}"
-//                } else if (music.handle.extension().equals("mp3", true)) {
-//                    label.text += "\n\n${Localization["screen.music.warning.mp3"]}"
-//                }
-//            }
         } else {
             label.text = when (throwable) {
                 is MusicLoadingException -> throwable.getLocalizedText()
@@ -215,5 +219,6 @@ class MusicSelectScreen(main: RHRE3Application)
             this.enabled = !(isChooserOpen || isLoading)
         }
     }
+
 }
 
